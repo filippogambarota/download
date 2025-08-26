@@ -1,0 +1,1 @@
+Repository to create a self-hosted version of services like [DownGit](https://downgit.github.io/#/home). Completely vibe coded with [https://chatgpt.com/c/68ad8aea-89fc-8330-afdc-2bd018cc81f7](https://chatgpt.com/c/68ad8aea-89fc-8330-afdc-2bd018cc81f7).
