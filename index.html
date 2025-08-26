@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>GitHub Folder Downloader</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+  <h2>GitHub Folder Downloader</h2>
+  <input id="url" type="text" size="80" placeholder="Paste GitHub folder URL">
+  <button onclick="downloadFolder()">Download</button>
+  <pre id="log"></pre>
+
+<script>
+async function fetchFiles(owner, repo, path) {
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const resp = await fetch(apiUrl);
+  const data = await resp.json();
+  let files = [];
+  for (const item of data) {
+    if (item.type === "file") {
+      files.push({ path: item.path, download_url: item.download_url });
+    } else if (item.type === "dir") {
+      const sub = await fetchFiles(owner, repo, item.path);
+      files = files.concat(sub);
+    }
+  }
+  return files;
+}
+
+async function downloadFolder() {
+  const url = document.getElementById("url").value;
+  const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/tree\/([^/]+)\/(.+)/);
+  if (!match) {
+    alert("Invalid URL");
+    return;
+  }
+  const [_, owner, repo, branch, path] = match;
+  log(`Fetching files from ${repo}/${path}...`);
+
+  const files = await fetchFiles(owner, repo, path);
+  const zip = new JSZip();
+
+  for (const file of files) {
+    log(`Adding ${file.path}`);
+    const resp = await fetch(file.download_url);
+    const blob = await resp.blob();
+    zip.file(file.path.replace(`${path}/`, ""), blob);
+  }
+
+  const content = await zip.generateAsync({ type: "blob" });
+  saveAs(content, `${path.split("/").pop()}.zip`);
+}
+
+function log(msg) {
+  document.getElementById("log").textContent += msg + "\n";
+}
+</script>
+</body>
+</html>
